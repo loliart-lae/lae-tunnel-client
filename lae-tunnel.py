@@ -24,13 +24,19 @@ get_server_url = "http://lightart.top/api/v1/_tunnels/create"
 project = {}
 server = {}
 
+# 调试模式
+Debug = False
+
 def sendrequest(url):
 
     r = requests.get(url)
 
     for i in range(0,3):
 
-        if (r.status_code != 200): continue
+        if (r.status_code != 200):
+            if (Debug):
+                print("[DEBUG] 有一条请求状态码错误: {} - {}".format(str(r.status_code), url))
+            continue
 
         result = json.loads(r.text)
 
@@ -62,37 +68,24 @@ def getUserInfo():
 # 获取隧道列表
 def printTunnel():
     #try:
-        r = requests.get(get_tunnels_url + "?api_token={}".format(token))
+        result = sendrequest(get_tunnels_url + "?api_token={}".format(token))
 
-        if (r.status_code == 200):
-            # 正确获取
-            result = json.loads(r.text)
-
-            #print(result)
-            if (result['status'] == 0):
-                print("[WARN] 请求出错, 或许是请求冷却或服务器故障")
-                return False
+        if (result == "error"): return False
             
-            table_header = "隧道 ID\t名称\t协议\t本地地址\t在线状态\t服务器 ID\t项目 ID\t最后在线"
-            table_format = "{id}\t{name}\t{protocol}\t{local_address}\t{status}\t{server_id}\t{project_id}\t{ping}"
+        table_header = "隧道 ID\t名称\t协议\t本地地址\t在线状态\t服务器 ID\t项目 ID\t最后在线"
+        table_format = "{id}\t{name}\t{protocol}\t{local_address}\t{status}\t{server_id}\t{project_id}\t{ping}"
             
-            print(table_header)
+        print(table_header)
 
-            for line in result['data']:
-                print(table_format.format(id=line['id'], name=line['name'], protocol=line['protocol'], local_address=line['local_address'], status=line['status'], server_id=line['server_id'], project_id=line['project_id'], ping=line['ping']))
-            return True
-        else:
-            # 验证失败
-            print("错误代码: " , r.status_code)
-            print(r.text)
-            return False
+        for line in result['data']:
+            print(table_format.format(id=line['id'], name=line['name'], protocol=line['protocol'], local_address=line['local_address'], status=line['status'], server_id=line['server_id'], project_id=line['project_id'], ping=line['ping']))
+        return True
     #except:
         # 本地错误
     #    print("[WARN] 请求出错, 或许是请求冷却或程序已过期")
     #    return False
 
 # Debug 模式
-Debug = False
 if (not Debug):
     print("========================================================================================================")
     print("")
