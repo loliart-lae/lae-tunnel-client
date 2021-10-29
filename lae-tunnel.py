@@ -67,23 +67,18 @@ def getUserInfo():
 
 # 获取隧道列表
 def printTunnel():
-    #try:
-        result = sendrequest(get_tunnels_url + "?api_token={}".format(token))
+    result = sendrequest(get_tunnels_url + "?api_token={}".format(token))
 
-        if (result == "error"): return False
+    if (result == "error"): return False
             
-        table_header = "隧道 ID\t名称\t协议\t本地地址\t在线状态\t服务器 ID\t项目 ID\t最后在线"
-        table_format = "{id}\t{name}\t{protocol}\t{local_address}\t{status}\t{server_id}\t{project_id}\t{ping}"
+    table_header = "隧道 ID\t名称\t协议\t本地地址\t在线状态\t服务器 ID\t项目 ID\t最后在线"
+    table_format = "{id}\t{name}\t{protocol}\t{local_address}\t{status}\t{server_id}\t{project_id}\t{ping}"
             
-        print(table_header)
+    print(table_header)
 
-        for line in result['data']:
-            print(table_format.format(id=line['id'], name=line['name'], protocol=line['protocol'], local_address=line['local_address'], status=line['status'], server_id=line['server_id'], project_id=line['project_id'], ping=line['ping']))
-        return True
-    #except:
-        # 本地错误
-    #    print("[WARN] 请求出错, 或许是请求冷却或程序已过期")
-    #    return False
+    for line in result['data']:
+        print(table_format.format(id=line['id'], name=line['name'], protocol=line['protocol'], local_address=line['local_address'], status=line['status'], server_id=line['server_id'], project_id=line['project_id'], ping=line['ping']))
+    return True
 
 # Debug 模式
 if (not Debug):
