@@ -24,29 +24,36 @@ get_server_url = "http://lightart.top/api/v1/_tunnels/create"
 project = {}
 server = {}
 
+def sendrequest(url):
+
+    r = requests.get(url)
+
+    for i in range(0,3):
+
+        if (r.status_code != 200): continue
+
+        result = json.loads(r.text)
+
+        if (result['status'] == 0):
+            print("[WARN] 请求出错, 或许是请求冷却或服务器故障")
+            return "error"
+        
+        return result['data']
+    
+    return "error"
+
 def getUserInfo():
-    r = requests.get(get_project_url + "?api_token={}".format(token))
+    
+    result = sendrequest(get_project_url + "?api_token={}".format(token))
 
-    if (r.status_code != 200): return False
-
-    result = json.loads(r.text)
-
-    if (result['status'] == 0):
-        print("[WARN] 请求出错, 或许是请求冷却或服务器故障")
-        return False
+    if (result == "error"): return False
 
     for line in result['data']:
         project[line['project']['id']] = line['project']['name']
     
-    r = requests.get(get_server_url + "?api_token={}".format(token))
-
-    if (r.status_code != 200): return False
-
-    result = json.loads(r.text)
-
-    if (result['status'] == 0):
-        print("[WARN] 请求出错, 或许是请求冷却或服务器故障")
-        return False
+    result = sendrequest(get_server_url + "?api_token={}".format(token))
+    
+    if (result == "error"): return False
     
     for line in result['data']:
         server[line['id']] = line['name']
