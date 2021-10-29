@@ -73,13 +73,17 @@ def printTunnel():
 
     if (result == "error"): return False
             
-    table_header = "隧道 ID\t名称\t协议\t本地地址\t在线状态\t服务器 ID\t项目 ID\t最后在线"
+    table_header = "隧道 ID\t名称\t协议\t本地地址\t在线状态\t服务器\t项目\t最后在线"
     table_format = "{id}\t{name}\t{protocol}\t{local_address}\t{status}\t{server_id}\t{project_id}\t{ping}"
             
     print(table_header)
 
     for line in result:
-        print(table_format.format(id=line['id'], name=line['name'], protocol=line['protocol'], local_address=line['local_address'], status=line['status'], server_id=line['server_id'], project_id=line['project_id'], ping=line['ping']))
+        if (line['status'] == 1): status_name = "在线"
+        else: status_name = "离线"
+        server_name = server[line['server_id']]
+        project_name = project[line['project_id']]
+        print(table_format.format(id=line['id'], name=line['name'], protocol=line['protocol'], local_address=line['local_address'], status=status_name, server_id=server_name, project_id=project_name, ping=line['ping']))
     return True
 
 # Debug 模式
