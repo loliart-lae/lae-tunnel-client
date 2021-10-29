@@ -4,7 +4,7 @@
 
 from threading import Thread
 from queue import Queue
-from win10toast import ToastNotifier
+#from win10toast import ToastNotifier
 import time, json, argparse, requests
 import frpgo
 
@@ -13,7 +13,7 @@ q = Queue()
 o = Queue()
 
 # Windows 通知
-toaster = ToastNotifier()
+#toaster = ToastNotifier()
 
 # 配置部分
 get_tunnels_url = "http://lightart.top/api/v1/_tunnels"
@@ -45,7 +45,9 @@ def sendrequest(url):
             return "error"
         
         return result['data']
-    
+
+    if (Debug):
+        print("[DEBUG] 多次请求失败, 已放弃")
     return "error"
 
 def getUserInfo():
@@ -54,14 +56,14 @@ def getUserInfo():
 
     if (result == "error"): return False
 
-    for line in result['data']:
+    for line in result:
         project[line['project']['id']] = line['project']['name']
     
     result = sendrequest(get_server_url + "?api_token={}".format(token))
     
     if (result == "error"): return False
     
-    for line in result['data']:
+    for line in result:
         server[line['id']] = line['name']
 
 
@@ -76,7 +78,7 @@ def printTunnel():
             
     print(table_header)
 
-    for line in result['data']:
+    for line in result:
         print(table_format.format(id=line['id'], name=line['name'], protocol=line['protocol'], local_address=line['local_address'], status=line['status'], server_id=line['server_id'], project_id=line['project_id'], ping=line['ping']))
     return True
 
