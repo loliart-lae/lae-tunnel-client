@@ -97,7 +97,7 @@ def printTunnel(is_arg):
 
 # 下载配置文件
 def get_config(id):
-    result = sendrequest(get_config_url + id + "?api_token={}".format(token), True)
+    result = sendrequest(get_config_url + str(id) + "?api_token={}".format(token), True)
 
     if (result == "error"): return False
 
@@ -124,7 +124,12 @@ def runTunnel(tunnels):
     success = 0
 
     for tunnel_id in tunnels:
-        if (int(tunnel_id) in tunnel):
+        try:
+            tunnel_ID = int(tunnel_id)
+        except ValueError:
+            print("[WARN] 输入的隧道 ID 为非整数.")
+            return False
+        if (tunnel_ID in tunnel):
             # 下载配置文件
             if (get_config(tunnel_id)):
                 # 启动程序
@@ -166,7 +171,48 @@ def getToken(is_arg):
 def getTunnelID(is_arg):
     global arg_tunnel
     if (not is_arg):
-        arg_tunnel = input("[INFO] 输入你要连接的隧道 ID (直接回车将连接所有隧道, 使用英文逗号分割可连接多个): ").split(',')
+        arg_tunnel = input("[INFO] 输入你要连接的隧道 ID (直接回车将连接所有隧道, 使用英文逗号分割可连接多个): ")
+        # 空输入
+        if (arg_tunnel == ""):
+            project_format = ", {id} - {name}"
+
+            project_str = "[INFO] 回车 - 所有项目"
+
+            for project_id in project.keys():
+                project_str += project_format.format(id=project_id, name=project[project_id])
+
+            print(project_str)
+
+            while (1):
+                choose_project = input("[INFO] 选择你要启动哪个或哪些的项目中的所有隧道: ")
+
+                if (choose_project == ""):
+                    arg_tunnel = list(tunnel.keys())
+                    break
+                else:
+                    try:
+                        choose_project = int(choose_project)
+                    except ValueError:
+                        print("[WARN] 输入非整数, 请重新输入...")
+                        continue
+                        
+                    # 判断是否在项目列表
+                    if choose_project in project.keys():
+                        arg_tunnel = []
+                        for tunnel_id in tunnel.keys():
+                            if tunnel[tunnel_id] == choose_project:
+                                arg_tunnel.append(tunnel_id)
+
+                        if (len(arg_tunnel) == 0):
+                            print("[WARN] 该项目中没有隧道, 请重新输入...")
+                            continue
+                        else:
+                            break
+                    else:
+                        print("[WARN] 输入的值非允许值, 请重新输入...")
+                        continue
+        else:
+            arg_tunnel = arg_tunnel.split(',')
 
     if(runTunnel(arg_tunnel)):
         return True
