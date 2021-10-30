@@ -68,7 +68,6 @@ def getUserInfo():
     for line in result:
         server[line['id']] = line['name']
 
-
 # 获取隧道列表
 def printTunnel():
     result = sendrequest(get_tunnels_url + "?api_token={}".format(token), False)
@@ -137,6 +136,36 @@ def runTunnel(tunnels):
     if (success == 0): return False
     else: return True
 
+# 向用户获取 Token
+def getToken(is_arg):
+    global token
+    if (not is_arg):
+        token = input("[INFO] 输入你的 Token: ")
+
+    getUserInfo()
+
+    if (printTunnel()):
+        return True
+    else:
+        if (is_arg):
+            print("[ERROR] Token 验证失败.")
+        else:
+            print("[WARN] Token 验证失败, 请重试...")
+        return False
+
+# 向用户获取 隧道 ID
+def getTunnelID(is_arg):
+    if (not is_arg):
+        arg_tunnel = input("[INFO] 输入你要连接的隧道 ID (直接回车将连接所有隧道, 使用英文逗号分割可连接多个): ").split(',')
+
+    if(runTunnel(arg_tunnel)):
+        return True
+    else:
+        if (is_arg):
+            print("[ERROR] 你提供的隧道 ID 均不存在.")
+        else:
+            print("[WARN] 所有输入的隧道均不存在, 请重新输入...")
+
 # Debug 模式
 if (not Debug):
     print("========================================================================================================")
@@ -154,8 +183,8 @@ if (not Debug):
 if __name__ == "__main__":
     # 检查参数
     parser = argparse.ArgumentParser(description='Light App Engine Tunnel Client.')
-    parser.add_argument('-a', '--token', help='User Token')
-    parser.add_argument('-t', '--tunnel', help='Tunnel ID (Use , split)')
+    parser.add_argument('-a', '--token', help='user token')
+    parser.add_argument('-t', '--tunnel', help='tunnel ID (Use , split)')
     args = parser.parse_args()
 
     token = args.token
@@ -167,24 +196,23 @@ if __name__ == "__main__":
     if (token == None and arg_tunnel == None):
 
         while (1):
-
-            token = input("[INFO] 输入你的 Token: ")
-
-            getUserInfo()
-
-            if (printTunnel()):
-                break
-            else:
-                print("[WARN] Token 验证失败, 请重试...")
+            if (getToken(), False): break
         
         while(1):
+            if (getTunnelID(), False): break
+            
+    # 仅提供了 token
+    elif (token != None and arg_tunnel == None):
+        while(1):
 
-            arg_tunnel = input("[INFO] 输入你要连接的隧道 ID (直接回车将连接所有隧道, 使用英文逗号分割可连接多个): ").split(',')
+            if (getToken(True) == False): break
 
-            if(runTunnel(arg_tunnel)):
-                break
-            else:
-                print("[WARN] 所有输入的隧道均不存在, 请重新输入...")
+            if (getTunnelID(True) == False): break
+    # 都提供了
+    else:
+        getToken(True)
+
+        getTunnelID(True)
     
     # 阻塞防止关闭
     while(1):
