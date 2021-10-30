@@ -5,7 +5,7 @@
 from threading import Thread
 from queue import Queue
 #from win10toast import ToastNotifier
-import time, json, argparse, requests
+import time, json, argparse, requests, os
 import frpgo
 
 # 通信部分    
@@ -19,7 +19,7 @@ o = Queue()
 get_tunnels_url = "http://lightart.top/api/v1/_tunnels"
 get_project_url = "http://lightart.top/api/_projects"
 get_server_url = "http://lightart.top/api/v1/_tunnels/create"
-get_config_url = " https://lightart.top/api/v1/_tunnels/"
+get_config_url = " http://lightart.top/api/v1/_tunnels/"
 
 # 变量部分
 project = {}
@@ -97,7 +97,13 @@ def get_config(id):
 
     if (result == "error"): return False
 
-
+    if (os.path.exists('config')) == False:
+        os.mkdir('config')
+    
+    with open('config/lae-frp-{}.ini'.format(id), 'w', encoding='utf8') as f:
+        f.write(result)
+    
+    return True
 
 # 启动隧道
 def runTunnel(tunnels):
@@ -105,13 +111,18 @@ def runTunnel(tunnels):
     success = 0
 
     for tunnel_id in tunnels:
-        if (tunnel_id in tunnel.keys()):
+        if (int(tunnel_id) in tunnel):
+            # 下载配置文件
+            if (get_config(tunnel_id)):
+                # 启动程序
+                
 
-            success += 1
+                success += 1
+            else:
+                print("[WARN] 获取隧道 ID 为 {} 的配置文件失败, 或许是网络问题或 token 过期.".format(tunnel_id))
     
     if (success == 0): return False
     else: return True
-
 
 # Debug 模式
 if (not Debug):
@@ -135,7 +146,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     token = args.token
-    arg_tunnel = args.tunnel.split(',')
+    arg_tunnel = args.tunnel
+    if (arg_tunnel != None):
+        arg_tunnel = arg_tunnel.split(',')
 
     # 最默认的模式
     if (token == None and arg_tunnel == None):
@@ -160,6 +173,3 @@ if __name__ == "__main__":
             else:
                 print("[WARN] 所有输入的隧道均不存在, 请重新输入...")
         
-
-
-
