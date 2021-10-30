@@ -3,14 +3,8 @@
 # 主程序
 
 from threading import Thread
-from queue import Queue
 #from win10toast import ToastNotifier
 import time, json, argparse, requests, os
-import frpgo
-
-# 通信部分    
-q = Queue()
-o = Queue()
 
 # Windows 通知
 #toaster = ToastNotifier()
@@ -30,6 +24,7 @@ config = {}
 # 调试模式
 Debug = False
 
+# 公用发送请求函数
 def sendrequest(url, original):
 
     r = requests.get(url)
@@ -105,6 +100,10 @@ def get_config(id):
     
     return True
 
+# 执行启动隧道
+def runCmd(command):
+    os.system(command)
+
 # 启动隧道
 def runTunnel(tunnels):
 
@@ -115,7 +114,11 @@ def runTunnel(tunnels):
             # 下载配置文件
             if (get_config(tunnel_id)):
                 # 启动程序
-                
+                command = 'api-frpclient.exe -c config/lae-frp-{}.ini'.format(tunnel_id)
+
+                th_frpGo = Thread(target=runCmd, args=(command,))
+                th_frpGo.setDaemon(True)
+                th_frpGo.start()
 
                 success += 1
             else:
@@ -166,10 +169,13 @@ if __name__ == "__main__":
         
         while(1):
 
-            arg_tunnel = input("[INFO] 输入你要连接的隧道 ID (直接回车将连接所有隧道): ").split(',')
+            arg_tunnel = input("[INFO] 输入你要连接的隧道 ID (直接回车将连接所有隧道, 使用英文逗号分割可连接多个): ").split(',')
 
             if(runTunnel(arg_tunnel)):
                 break
             else:
                 print("[WARN] 所有输入的隧道均不存在, 请重新输入...")
-        
+    
+    # 启动通信进程
+    while(1):
+        continue
