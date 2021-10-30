@@ -51,6 +51,7 @@ def sendrequest(url, original):
         print("[DEBUG] 多次请求失败, 已放弃")
     return "error"
 
+# 获取项目与节点名称
 def getUserInfo():
     
     result = sendrequest(get_project_url + "?api_token={}".format(token), False)
@@ -104,6 +105,11 @@ def get_config(id):
 def runCmd(command):
     os.system(command)
 
+# 删除配置文件
+def removeFile(file):
+    time.sleep(0.5)
+    os.remove(file)
+
 # 启动隧道
 def runTunnel(tunnels):
 
@@ -119,6 +125,10 @@ def runTunnel(tunnels):
                 th_frpGo = Thread(target=runCmd, args=(command,))
                 th_frpGo.setDaemon(True)
                 th_frpGo.start()
+
+                th_fileRemove = Thread(target=removeFile, args=('config/lae-frp-{}.ini'.format(tunnel_id),))
+                th_fileRemove.setDaemon(True)
+                th_fileRemove.start()
 
                 success += 1
             else:
@@ -176,6 +186,6 @@ if __name__ == "__main__":
             else:
                 print("[WARN] 所有输入的隧道均不存在, 请重新输入...")
     
-    # 启动通信进程
+    # 阻塞防止关闭
     while(1):
         continue
