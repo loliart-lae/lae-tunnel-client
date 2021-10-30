@@ -4,7 +4,7 @@
 
 from threading import Thread
 #from win10toast import ToastNotifier
-import time, json, argparse, requests, os
+import time, json, argparse, requests, os, urllib3
 
 # Windows 通知
 #toaster = ToastNotifier()
@@ -27,7 +27,12 @@ Debug = False
 # 公用发送请求函数
 def sendrequest(url, original):
 
-    r = requests.get(url)
+    try:
+        r = requests.get(url, verify=False)
+    except requests.exceptions.SSLError:
+        if (Debug):
+            print("[DEBUG] 请求时发生的错误, 可能是 token 错误导致跳转 https")
+        return False
 
     for i in range(0,3):
 
@@ -56,6 +61,7 @@ def getUserInfo():
     
     result = sendrequest(get_project_url + "?api_token={}".format(token), False)
 
+    if (result == False): return False
     if (result == "error"): return False
 
     for line in result:
@@ -72,6 +78,7 @@ def getUserInfo():
 def printTunnel(is_arg):
     result = sendrequest(get_tunnels_url + "?api_token={}".format(token), False)
 
+    if (result == False): return False
     if (result == "error"): return False
     
     if (not is_arg):
@@ -209,7 +216,7 @@ if __name__ == "__main__":
         print("[INFO] 你已使用参数启动, 正在获取隧道信息...")
 
         if (getToken(True) == False): 
-            os.exit(1)
+            os._exit(0)
         while(1):
             if (getTunnelID(False)): break
     # 都提供了
@@ -217,10 +224,10 @@ if __name__ == "__main__":
         print("[INFO] 你已使用参数启动, 正在直接启动隧道...")
 
         if (getToken(True) == False):
-            os.exit(1)
+            os._exit(0)
 
         if (getTunnelID(True) == False):
-            os.exit(1)
+            os._exit(0)
     
     # 阻塞防止关闭
     while(1):
