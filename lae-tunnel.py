@@ -69,19 +69,21 @@ def getUserInfo():
         server[line['id']] = line['name']
 
 # 获取隧道列表
-def printTunnel():
+def printTunnel(is_arg):
     result = sendrequest(get_tunnels_url + "?api_token={}".format(token), False)
 
     if (result == "error"): return False
     
-    table_format = "%-5s\t%-10s\t%-5s\t%-10s\t%-15s\t%-12s\t%-10s"
-            
-    print(table_format%("隧道 ID","名称","协议","本地地址","服务器","项目","最后在线"))
+    if (not is_arg):
+        table_format = "%-5s\t%-10s\t%-5s\t%-10s\t%-15s\t%-12s\t%-10s"
+    
+        print(table_format%("隧道 ID","名称","协议","本地地址","服务器","项目","最后在线"))
 
     for line in result:
-        server_name = server[line['server_id']]
-        project_name = project[line['project_id']]
-        print(table_format%(line['id'],line['name'],line['protocol'],line['local_address'],server_name,project_name,line['ping']))
+        if (not is_arg):
+            server_name = server[line['server_id']]
+            project_name = project[line['project_id']]
+            print(table_format%(line['id'],line['name'],line['protocol'],line['local_address'],server_name,project_name,line['ping']))
         tunnel[line['id']] = line['project_id']
 
     return True
@@ -144,7 +146,7 @@ def getToken(is_arg):
 
     getUserInfo()
 
-    if (printTunnel()):
+    if (printTunnel(is_arg)):
         return True
     else:
         if (is_arg):
@@ -155,6 +157,7 @@ def getToken(is_arg):
 
 # 向用户获取 隧道 ID
 def getTunnelID(is_arg):
+    global arg_tunnel
     if (not is_arg):
         arg_tunnel = input("[INFO] 输入你要连接的隧道 ID (直接回车将连接所有隧道, 使用英文逗号分割可连接多个): ").split(',')
 
@@ -193,26 +196,31 @@ if __name__ == "__main__":
         arg_tunnel = arg_tunnel.split(',')
 
     # 最默认的模式
-    if (token == None and arg_tunnel == None):
+    if (args.token == None and args.tunnel == None):
 
         while (1):
-            if (getToken(), False): break
+            if (getToken(False)): break
         
         while(1):
-            if (getTunnelID(), False): break
+            if (getTunnelID(False)): break
             
     # 仅提供了 token
-    elif (token != None and arg_tunnel == None):
+    elif (args.token != None and args.tunnel == None):
+        print("[INFO] 你已使用参数启动, 正在获取隧道信息...")
+
+        if (getToken(True) == False): 
+            os.exit(1)
         while(1):
-
-            if (getToken(True) == False): break
-
-            if (getTunnelID(True) == False): break
+            if (getTunnelID(False)): break
     # 都提供了
     else:
-        getToken(True)
+        print("[INFO] 你已使用参数启动, 正在直接启动隧道...")
 
-        getTunnelID(True)
+        if (getToken(True) == False):
+            os.exit(1)
+
+        if (getTunnelID(True) == False):
+            os.exit(1)
     
     # 阻塞防止关闭
     while(1):
