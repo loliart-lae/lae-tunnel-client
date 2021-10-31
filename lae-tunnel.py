@@ -168,7 +168,7 @@ def getToken(is_arg):
         return False
 
 # 向用户获取 隧道 ID
-def getTunnelID(is_arg):
+def getTunnelID(is_arg, is_project_arg):
     global arg_tunnel
     if (not is_arg):
         arg_tunnel = input("[INFO] 输入你要连接的隧道 ID (直接回车将连接所有隧道, 使用英文逗号分割可连接多个): ")
@@ -190,28 +190,33 @@ def getTunnelID(is_arg):
                     arg_tunnel = list(tunnel.keys())
                     break
                 else:
-                    # TODO 分隔符
                     try:
-                        choose_project = int(choose_project)
+                        choose_project = choose_project.split(",")
+                        
+                        for i in range(len(choose_project)):
+                            choose_project[i] = int(choose_project[i])
                     except ValueError:
                         print("[WARN] 输入非整数, 请重新输入...")
                         continue
-                        
-                    # 判断是否在项目列表
-                    if choose_project in project.keys():
-                        arg_tunnel = []
-                        for tunnel_id in tunnel.keys():
-                            if tunnel[tunnel_id] == choose_project:
-                                arg_tunnel.append(tunnel_id)
-
-                        if (len(arg_tunnel) == 0):
-                            print("[WARN] 该项目中没有隧道, 请重新输入...")
-                            continue
+                    
+                    arg_tunnel = []
+                    for project_num in choose_project:
+                        # 判断是否在项目列表
+                        if project_num in project.keys():
+                            
+                            for tunnel_id in tunnel.keys():
+                                if tunnel[tunnel_id] == project_num:
+                                    arg_tunnel.append(tunnel_id)
                         else:
-                            break
-                    else:
-                        print("[WARN] 输入的值非允许值, 请重新输入...")
+                            print("[WARN] 输入的值 {} 非允许值, 跳过...".format(project_num))
+                            continue
+
+                    if (len(arg_tunnel) == 0):
+                        print("[WARN] 项目中没有隧道, 请重新输入...")
                         continue
+                    else:
+                        break
+                    
         else:
             arg_tunnel = arg_tunnel.split(',')
 
@@ -242,10 +247,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Light App Engine Tunnel Client.')
     parser.add_argument('-a', '--token', help='user token')
     parser.add_argument('-t', '--tunnel', help='tunnel ID (Use , split)')
+    parser.add_argument('-p', '--project', help='project ID (Use , split), start all tunnels under the project.')
     args = parser.parse_args()
 
     token = args.token
     arg_tunnel = args.tunnel
+    arg_project = args.project
     if (arg_tunnel != None):
         arg_tunnel = arg_tunnel.split(',')
 
@@ -278,4 +285,4 @@ if __name__ == "__main__":
     
     # 阻塞防止关闭
     while(1):
-        continue
+        pass
