@@ -241,7 +241,6 @@ def getTunnelID(is_arg):
                                     arg_tunnel.append(tunnel_id)
                         else:
                             print("[WARN] 输入的值 {} 非允许值, 跳过...".format(project_num))
-                            continue
 
                     if (len(arg_tunnel) == 0):
                         if (args.project == None):
