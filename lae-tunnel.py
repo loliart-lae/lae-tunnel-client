@@ -4,7 +4,7 @@
 
 from threading import Thread
 #from win10toast import ToastNotifier
-import time, json, argparse, requests, os, urllib3
+import time, json, argparse, requests, os, yaml
 
 # Windows 通知
 #toaster = ToastNotifier()
@@ -24,6 +24,30 @@ config = {}
 # 调试模式
 Debug = False
 
+# 语言
+language = {}
+language_code = "zh_cn"
+
+# 获取配置文件
+def read_config():
+    config = {}
+    with open('config.yml', 'r', encoding="utf-8") as f:
+        config = yaml.load(f, Loader= yaml.SafeLoader)
+    # 读取
+    global Debug, language_code, get_tunnels_url, get_project_url, get_server_url, get_config_url
+    Debug = config['debug']
+    language_code = config['language']
+    get_tunnels_url = config['api']['get_tunnels']
+    get_project_url = config['api']['get_project']
+    get_server_url = config['api']['get_server']
+    get_config_url = config['api']['get_config']
+
+# 读取语言文件
+def read_language(Language):
+    global language, language_code
+    with open(Language, 'r', encoding="utf-8") as f:
+        language = yaml.load(f, Loader = yaml.SafeLoader)
+
 # 公用发送请求函数
 def sendrequest(url, original):
 
@@ -31,14 +55,14 @@ def sendrequest(url, original):
         r = requests.get(url, verify=False)
     except requests.exceptions.SSLError:
         if (Debug):
-            print("[DEBUG] 请求时发生的错误, 可能是 token 错误导致跳转 https")
+            print(language['debug'] + language['ssl_error'])
         return False
 
     for i in range(0,3):
 
         if (r.status_code != 200):
             if (Debug):
-                print("[DEBUG] 有一条请求状态码错误: {} - {}".format(str(r.status_code), url))
+                print(language['debug'] + language['status_code_error'].format(code=str(r.status_code), url=url))
             continue
 
         if (original == True):
@@ -47,13 +71,13 @@ def sendrequest(url, original):
         result = json.loads(r.text)
 
         if (result['status'] == 0):
-            print("[WARN] 请求出错, 或许是请求冷却或服务器故障")
+            print(language['warn'] + language['status_error'])
             return "error"
         
         return result['data']
 
     if (Debug):
-        print("[DEBUG] 多次请求失败, 已放弃")
+        print(language['debug'] + language['fail_request'])
     return "error"
 
 # 获取项目与节点名称
@@ -84,7 +108,7 @@ def printTunnel(is_arg):
     if (not is_arg):
         table_format = "%-5s\t%-10s\t%-5s\t%-10s\t%-15s\t%-12s\t%-10s"
     
-        print(table_format%("隧道 ID","名称","协议","本地地址","服务器","项目","最后在线"))
+        print(table_format%(language['tunnel_id'],language['tunnel_name'],language['tunnel_protocol'],language['tunnel_local_address'],language['tunnel_server'],language['tunnel_project'],language['tunnel_ping']))
 
     for line in result:
         if (not is_arg):
@@ -115,7 +139,7 @@ def runCmd(command):
 
 # 删除配置文件
 def removeFile(file):
-    time.sleep(0.5)
+    time.sleep(5)
     os.remove(file)
 
 # 启动隧道
@@ -127,7 +151,7 @@ def runTunnel(tunnels):
         try:
             tunnel_ID = int(tunnel_id)
         except ValueError:
-            print("[WARN] 输入的隧道 ID 为非整数.")
+            print(language['warn'] + language['tunnel_input_value_warn'])
             return False
         if (tunnel_ID in tunnel):
             # 下载配置文件
@@ -145,7 +169,7 @@ def runTunnel(tunnels):
 
                 success += 1
             else:
-                print("[WARN] 获取隧道 ID 为 {} 的配置文件失败, 或许是网络问题或 token 过期.".format(tunnel_id))
+                print(language['warn'] + language['tunnel_get_config_warn'].format(tunnel_id))
     
     if (success == 0): return False
     else: return True
@@ -154,7 +178,10 @@ def runTunnel(tunnels):
 def getToken(is_arg):
     global token
     if (not is_arg):
-        token = input("[INFO] 输入你的 Token: ")
+        token = input(language['info'] + language['token_input'])
+        if (token == ""):
+            print(language['warn'] + language['token_null'])
+            return False
 
     getUserInfo()
 
@@ -162,21 +189,21 @@ def getToken(is_arg):
         return True
     else:
         if (is_arg):
-            print("[ERROR] Token 验证失败.")
+            print(language['error'] + language['token_fail'])
         else:
-            print("[WARN] Token 验证失败, 请重试...")
+            print(language['warn'] + language['token_warn'])
         return False
 
 # 向用户获取 隧道 ID
 def getTunnelID(is_arg):
     global arg_tunnel
     if (not is_arg):
-        arg_tunnel = input("[INFO] 输入你要连接的隧道 ID (直接回车将连接所有隧道, 使用英文逗号分割可连接多个): ")
+        arg_tunnel = input(language['info'] + language['tunnel_input'])
         # 空输入
         if (arg_tunnel == ""):
-            project_format = ", {id} - {name}"
+            project_format = language['project_format']
 
-            project_str = "[INFO] 回车 - 所有项目"
+            project_str = language['info'] + language['project_str']
 
             for project_id in project.keys():
                 project_str += project_format.format(id=project_id, name=project[project_id])
@@ -184,33 +211,50 @@ def getTunnelID(is_arg):
             print(project_str)
 
             while (1):
-                choose_project = input("[INFO] 选择你要启动哪个或哪些的项目中的所有隧道: ")
+                if (arg_project == None):
+                    choose_project = input(language['info'] + language['tunnel_project_input'])
+                else:
+                    choose_project = arg_project
 
                 if (choose_project == ""):
                     arg_tunnel = list(tunnel.keys())
                     break
                 else:
                     try:
-                        choose_project = int(choose_project)
-                    except ValueError:
-                        print("[WARN] 输入非整数, 请重新输入...")
-                        continue
+                        choose_project = choose_project.split(",")
                         
-                    # 判断是否在项目列表
-                    if choose_project in project.keys():
-                        arg_tunnel = []
-                        for tunnel_id in tunnel.keys():
-                            if tunnel[tunnel_id] == choose_project:
-                                arg_tunnel.append(tunnel_id)
-
-                        if (len(arg_tunnel) == 0):
-                            print("[WARN] 该项目中没有隧道, 请重新输入...")
+                        for i in range(len(choose_project)):
+                            choose_project[i] = int(choose_project[i])
+                    except ValueError:
+                        if (args.project == None):
+                            print(language['warn'] + language['tunnel_project_id_warn'])
                             continue
                         else:
+                            print(language['error'] + language['tunnel_project_id_fail'])
+                            break
+                        
+                    
+                    arg_tunnel = []
+                    for project_num in choose_project:
+                        # 判断是否在项目列表
+                        if project_num in project.keys():
+                            
+                            for tunnel_id in tunnel.keys():
+                                if tunnel[tunnel_id] == project_num:
+                                    arg_tunnel.append(tunnel_id)
+                        else:
+                            print(language['warn'] + language['tunnel_project_id_pass'].format(str=project_num))
+
+                    if (len(arg_tunnel) == 0):
+                        if (args.project == None):
+                            print(language['warn'] + language['tunnel_project_no_tunnel_warn'])
+                            continue
+                        else:
+                            print(language['error'] + language['tunnel_project_no_tunnel_fail'])
                             break
                     else:
-                        print("[WARN] 输入的值非允许值, 请重新输入...")
-                        continue
+                        break
+                    
         else:
             arg_tunnel = arg_tunnel.split(',')
 
@@ -218,9 +262,9 @@ def getTunnelID(is_arg):
         return True
     else:
         if (is_arg):
-            print("[ERROR] 你提供的隧道 ID 均不存在.")
+            print(language['error'] + language['tunnel_not_found_fail'])
         else:
-            print("[WARN] 所有输入的隧道均不存在, 请重新输入...")
+            print(language['warn'] + language['tunnel_not_found_warn'])
 
 # Debug 模式
 if (not Debug):
@@ -237,14 +281,20 @@ if (not Debug):
     print("")
 
 if __name__ == "__main__":
+    # 读取配置文件
+    read_config()
+    read_language("language/{}.yml".format(language_code))
+
     # 检查参数
-    parser = argparse.ArgumentParser(description='Light App Engine Tunnel Client.')
-    parser.add_argument('-a', '--token', help='user token')
-    parser.add_argument('-t', '--tunnel', help='tunnel ID (Use , split)')
+    parser = argparse.ArgumentParser(description=language['arg_description'])
+    parser.add_argument('-a', '--token', help=language['arg_token'])
+    parser.add_argument('-t', '--tunnel', help=language['arg_tunnel'])
+    parser.add_argument('-p', '--project', help=language['arg_project'])
     args = parser.parse_args()
 
     token = args.token
     arg_tunnel = args.tunnel
+    arg_project = args.project
     if (arg_tunnel != None):
         arg_tunnel = arg_tunnel.split(',')
 
@@ -259,7 +309,7 @@ if __name__ == "__main__":
             
     # 仅提供了 token
     elif (args.token != None and args.tunnel == None):
-        print("[INFO] 你已使用参数启动, 正在获取隧道信息...")
+        print(language['info'] + language['has_token_arg'])
 
         if (getToken(True) == False): 
             os._exit(0)
@@ -267,7 +317,7 @@ if __name__ == "__main__":
             if (getTunnelID(False)): break
     # 都提供了
     else:
-        print("[INFO] 你已使用参数启动, 正在直接启动隧道...")
+        print(language['info'] + language['has_tunnel_arg'])
 
         if (getToken(True) == False):
             os._exit(0)
@@ -277,4 +327,4 @@ if __name__ == "__main__":
     
     # 阻塞防止关闭
     while(1):
-        continue
+        pass

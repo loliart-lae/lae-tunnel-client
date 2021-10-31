@@ -1,0 +1,48 @@
+# 语言文件版本
+version: 1
+# 信息类型
+info: "[INFO] "
+warn: "[WARN] "
+error: "[ERROR] "
+debug: "[DEBUG] "
+# 参数启动提示
+has_token_arg: "你已使用参数启动, 正在获取隧道信息..."
+has_tunnel_arg: "你已使用参数启动, 正在直接启动隧道..."
+
+arg_description: "轻量应用引擎 (Light App Engine) 穿透隧道程序"
+arg_token: "用户 Token"
+arg_tunnel: "隧道 ID (使用英文逗号分隔)"
+arg_project: "项目 ID (使用英文逗号分隔, 启动指定项目内所有隧道)"
+# 发送函数
+ssl_error: "请求时发生的错误, 可能是 token 错误导致跳转 https"
+status_code_error: "有一条请求状态码错误: {code} - {url}"
+status_error: "请求出错, 或许是请求冷却或服务器故障"
+fail_request: "多次请求失败, 已放弃"
+# 隧道列表
+tunnel_id: "隧道 ID"
+tunnel_name: "名称"
+tunnel_protocol: "协议"
+tunnel_local_address: "本地地址"
+tunnel_server: "节点服务器"
+tunnel_project: "项目"
+tunnel_ping: "最后在线"
+# 启动隧道
+tunnel_input_value_warn: "输入的隧道 ID 为非整数"
+tunnel_get_config_warn: "获取隧道 ID 为 {id} 的配置文件失败, 或许是网络问题或 token 过期"
+# 获取 Token
+token_input: "输入你的 Token: "
+token_null: "Token 不可为空"
+token_fail: "Token 验证失败."
+token_warn: "Token 验证失败, 请重试..."
+# 获取 隧道 ID
+tunnel_input: "输入你要连接的隧道 ID (直接回车将连接所有隧道, 使用英文逗号分割可连接多个): "
+project_format: ", {id} - {name}"
+project_str: "回车 - 所有项目"
+tunnel_project_input: "选择你要启动哪个或哪些的项目中的所有隧道: "
+tunnel_project_id_warn: "输入非整数, 请重新输入..."
+tunnel_project_id_fail: "输入非整数项目 ID."
+tunnel_project_id_pass: "输入的值 {str} 非允许值, 跳过..."
+tunnel_project_no_tunnel_warn: "项目中没有隧道, 请重新输入..."
+tunnel_project_no_tunnel_fail: "项目中没有隧道."
+tunnel_not_found_fail: "你提供的隧道 ID 均不存在."
+tunnel_not_found_warn: "所有输入的隧道均不存在, 请重新输入..."

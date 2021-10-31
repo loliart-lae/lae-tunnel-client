@@ -1,0 +1,19 @@
+# 调试模式
+# 多次请求失败时, 你可以启用此项查看具体信息
+debug: false
+
+# 配置文件版本
+# 请勿修改此值, 否则可能导致出错
+version: 1
+
+# 使用语言
+# zh_cn 简体中文
+language: zh_cn
+
+# API
+# 目前仅支持 http 协议, 使用 https 会导致 ssl 验证错误
+api:
+  get_tunnels: "http://lightart.top/api/v1/_tunnels"
+  get_project: "http://lightart.top/api/_projects"
+  get_server: "http://lightart.top/api/v1/_tunnels/create"
+  get_config: " http://lightart.top/api/v1/_tunnels/"
