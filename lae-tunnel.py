@@ -35,12 +35,12 @@ def read_config():
         config = yaml.load(f, Loader= yaml.SafeLoader)
     # 读取
     global Debug, language_code, get_tunnels_url, get_project_url, get_server_url, get_config_url
-    Debug = config.get('debug')
-    language_code = config.get('language')
-    get_tunnels_url = config.get('api.get_tunnels')
-    get_project_url = config.get('api.get_project')
-    get_server_url = config.get('api.get_server')
-    get_config_url = config.get('api.get_config')
+    Debug = config['debug']
+    language_code = config['language']
+    get_tunnels_url = config['api']['get_tunnels']
+    get_project_url = config['api']['get_project']
+    get_server_url = config['api']['get_server']
+    get_config_url = config['api']['get_config']
 
 # 读取语言文件
 def read_language(Language):
@@ -139,7 +139,7 @@ def runCmd(command):
 
 # 删除配置文件
 def removeFile(file):
-    time.sleep(0.5)
+    time.sleep(5)
     os.remove(file)
 
 # 启动隧道
