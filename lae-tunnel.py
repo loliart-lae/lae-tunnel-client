@@ -4,7 +4,7 @@
 
 from threading import Thread
 #from win10toast import ToastNotifier
-import time, json, argparse, requests, os, urllib3
+import time, json, argparse, requests, os, yaml
 
 # Windows 通知
 #toaster = ToastNotifier()
@@ -23,6 +23,23 @@ config = {}
 
 # 调试模式
 Debug = False
+
+# 语言
+Language = "zh_cn"
+
+# 获取配置文件
+def read_config(filename):
+    config = {}
+    with open(filename, 'r', encoding="utf-8") as f:
+        config = yaml.load(f, Loader= yaml.SafeLoader)
+    # 读取
+    global Debug, Language, get_tunnels_url, get_project_url, get_server_url, get_config_url
+    Debug = config.get('debug')
+    Language = config.get('language')
+    get_tunnels_url = config.get('api.get_tunnels')
+    get_project_url = config.get('api.get_project')
+    get_server_url = config.get('api.get_server')
+    get_config_url = config.get('api.get_config')
 
 # 公用发送请求函数
 def sendrequest(url, original):
@@ -184,7 +201,10 @@ def getTunnelID(is_arg):
             print(project_str)
 
             while (1):
-                choose_project = input("[INFO] 选择你要启动哪个或哪些的项目中的所有隧道: ")
+                if (arg_project == None):
+                    choose_project = input("[INFO] 选择你要启动哪个或哪些的项目中的所有隧道: ")
+                else:
+                    choose_project = arg_project
 
                 if (choose_project == ""):
                     arg_tunnel = list(tunnel.keys())
@@ -196,8 +216,13 @@ def getTunnelID(is_arg):
                         for i in range(len(choose_project)):
                             choose_project[i] = int(choose_project[i])
                     except ValueError:
-                        print("[WARN] 输入非整数, 请重新输入...")
-                        continue
+                        if (args.project == None):
+                            print("[WARN] 输入非整数, 请重新输入...")
+                            continue
+                        else:
+                            print("[ERROR] 输入非整数项目 ID.")
+                            break
+                        
                     
                     arg_tunnel = []
                     for project_num in choose_project:
@@ -212,8 +237,12 @@ def getTunnelID(is_arg):
                             continue
 
                     if (len(arg_tunnel) == 0):
-                        print("[WARN] 项目中没有隧道, 请重新输入...")
-                        continue
+                        if (args.project == None):
+                            print("[WARN] 项目中没有隧道, 请重新输入...")
+                            continue
+                        else:
+                            print("[ERROR] 项目中没有隧道.")
+                            break
                     else:
                         break
                     
