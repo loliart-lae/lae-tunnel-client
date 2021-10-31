@@ -25,7 +25,8 @@ config = {}
 Debug = False
 
 # 语言
-Language = "zh_cn"
+Language = {}
+LanguageCode = "zh_cn"
 
 # 获取配置文件
 def read_config():
@@ -33,13 +34,19 @@ def read_config():
     with open('config.yml', 'r', encoding="utf-8") as f:
         config = yaml.load(f, Loader= yaml.SafeLoader)
     # 读取
-    global Debug, Language, get_tunnels_url, get_project_url, get_server_url, get_config_url
+    global Debug, LanguageCode, get_tunnels_url, get_project_url, get_server_url, get_config_url
     Debug = config.get('debug')
-    Language = config.get('language')
+    LanguageCode = config.get('language')
     get_tunnels_url = config.get('api.get_tunnels')
     get_project_url = config.get('api.get_project')
     get_server_url = config.get('api.get_server')
     get_config_url = config.get('api.get_config')
+
+# 读取语言文件
+def read_language(language):
+    global Language, LanguageCode
+    with open(language, 'r', encoding="utf-8") as f:
+        Language = yaml.load(f, Loader = yaml.SafeLoader)
 
 # 公用发送请求函数
 def sendrequest(url, original):
@@ -274,6 +281,7 @@ if (not Debug):
 if __name__ == "__main__":
     # 读取配置文件
     read_config()
+    read_language("language/{}.yml".format(LanguageCode))
 
     # 检查参数
     parser = argparse.ArgumentParser(description='Light App Engine Tunnel Client.')
