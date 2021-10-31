@@ -28,9 +28,9 @@ Debug = False
 Language = "zh_cn"
 
 # 获取配置文件
-def read_config(filename):
+def read_config():
     config = {}
-    with open(filename, 'r', encoding="utf-8") as f:
+    with open('config.yml', 'r', encoding="utf-8") as f:
         config = yaml.load(f, Loader= yaml.SafeLoader)
     # 读取
     global Debug, Language, get_tunnels_url, get_project_url, get_server_url, get_config_url
@@ -272,6 +272,9 @@ if (not Debug):
     print("")
 
 if __name__ == "__main__":
+    # 读取配置文件
+    read_config()
+
     # 检查参数
     parser = argparse.ArgumentParser(description='Light App Engine Tunnel Client.')
     parser.add_argument('-a', '--token', help='user token')
