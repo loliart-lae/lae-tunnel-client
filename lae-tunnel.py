@@ -168,7 +168,7 @@ def getToken(is_arg):
         return False
 
 # 向用户获取 隧道 ID
-def getTunnelID(is_arg, is_project_arg):
+def getTunnelID(is_arg):
     global arg_tunnel
     if (not is_arg):
         arg_tunnel = input("[INFO] 输入你要连接的隧道 ID (直接回车将连接所有隧道, 使用英文逗号分割可连接多个): ")
