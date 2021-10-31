@@ -3,11 +3,7 @@
 # 主程序
 
 from threading import Thread
-#from win10toast import ToastNotifier
-import time, json, argparse, requests, os, yaml
-
-# Windows 通知
-#toaster = ToastNotifier()
+import time, json, argparse, requests, os, yaml, platform
 
 # 配置部分
 get_tunnels_url = "http://lightart.top/api/v1/_tunnels"
