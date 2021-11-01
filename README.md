@@ -16,10 +16,11 @@ Light App Engine Tunnel Client
 4. (可选) 使用启动参数运行
 
 ### Linux
-1. 在 Releases 下载最新的版本.
-2. (可选) 修改 `config.yml`
-3. 执行 `python lae-tunnel.py`
-4. (可选) 使用启动参数运行
+1. 确保安装 `Python3`
+2. 在 Releases 下载最新的版本.
+3. (可选) 修改 `config.yml`
+4. 执行 `python lae-tunnel.py`
+5. (可选) 使用启动参数运行
 
 ### macOS
 同 Linux.
