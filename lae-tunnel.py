@@ -3,13 +3,17 @@
 # 主程序
 
 from threading import Thread
-import time, json, argparse, requests, os, yaml, platform
+import time, json, argparse, requests, os, yaml
 
 # 配置部分
 get_tunnels_url = "http://lightart.top/api/v1/_tunnels"
 get_project_url = "http://lightart.top/api/_projects"
 get_server_url = "http://lightart.top/api/v1/_tunnels/create"
 get_config_url = " http://lightart.top/api/v1/_tunnels/"
+
+# frpc 命令
+frpc_command = "api-frpclient.exe -c {file}"
+frpc_config = "config/lae-frp-{id}.ini"
 
 # 变量部分
 project = {}
@@ -30,13 +34,15 @@ def read_config():
     with open('config.yml', 'r', encoding="utf-8") as f:
         config = yaml.load(f, Loader= yaml.SafeLoader)
     # 读取
-    global Debug, language_code, get_tunnels_url, get_project_url, get_server_url, get_config_url
+    global Debug, language_code, get_tunnels_url, get_project_url, get_server_url, get_config_url, frpc_command, frpc_config
     Debug = config['debug']
     language_code = config['language']
     get_tunnels_url = config['api']['get_tunnels']
     get_project_url = config['api']['get_project']
     get_server_url = config['api']['get_server']
     get_config_url = config['api']['get_config']
+    frpc_command = config['frpc_command']
+    frpc_config = config['frpc_config']
 
 # 读取语言文件
 def read_language(Language):
@@ -153,13 +159,13 @@ def runTunnel(tunnels):
             # 下载配置文件
             if (get_config(tunnel_id)):
                 # 启动程序
-                command = 'api-frpclient.exe -c config/lae-frp-{}.ini'.format(tunnel_id)
+                command = frpc_command.format(file=frpc_config.format(id=tunnel_id))
 
                 th_frpGo = Thread(target=runCmd, args=(command,))
                 th_frpGo.setDaemon(True)
                 th_frpGo.start()
 
-                th_fileRemove = Thread(target=removeFile, args=('config/lae-frp-{}.ini'.format(tunnel_id),))
+                th_fileRemove = Thread(target=removeFile, args=(frpc_config.format(id=tunnel_id),))
                 th_fileRemove.setDaemon(True)
                 th_fileRemove.start()
 
