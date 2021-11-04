@@ -130,6 +130,8 @@ def printTunnel(is_arg):
 # 下载配置文件
 def get_config(id):
 
+    if (args.latest and os.path.exists(frpc_config.format(id=id))): return True
+
     result = sendrequest(get_config_url + str(id) + "?api_token={}".format(token), True)
 
     if (result == "error"): return False
@@ -137,7 +139,7 @@ def get_config(id):
     if (os.path.exists('config')) == False:
         os.mkdir('config')
     
-    with open(frpc_config.format(id), 'w', encoding='utf8') as f:
+    with open(frpc_config.format(id=id), 'w', encoding='utf-8') as f:
         f.write(result)
     
     return True
@@ -271,9 +273,13 @@ if __name__ == "__main__":
 
     # 检查参数
     parser = argparse.ArgumentParser(description=language['arg_description'])
-    parser.add_argument('-a', '--token', help=language['arg_token'])
+    parser.add_argument('--token', help=language['arg_token'])
     parser.add_argument('-t', '--tunnel', help=language['arg_tunnel'])
+    parser.add_argument('--lang', help=language['arg_lang'])
+    parser.add_argument('--latest', help=language['arg_latest'], action='store_true')
     args = parser.parse_args()
+
+    read_language("language/{}.yml".format(language_code))
 
     token = args.token
     arg_tunnel = args.tunnel

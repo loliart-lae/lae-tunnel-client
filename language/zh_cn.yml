@@ -8,10 +8,12 @@ debug: "[DEBUG] "
 # 参数启动提示
 has_token_arg: "你已使用参数启动, 正在获取隧道信息..."
 has_tunnel_arg: "你已使用参数启动, 正在直接启动隧道..."
-
+# 参数提示
 arg_description: "轻量应用引擎 (Light App Engine) 穿透隧道程序"
 arg_token: "用户 Token"
 arg_tunnel: "隧道 ID / 项目 ID (使用英文逗号分隔, 输入项目 ID 可启动指定项目所有隧道)"
+arg_lang: "语言 (优先级高于配置文件)"
+arg_latest: "使用最新的配置文件 (覆盖旧配置)"
 # 发送函数
 ssl_error: "请求时发生的错误, 可能是 token 错误导致跳转 https"
 status_code_error: "有一条请求状态码错误: {code} - {url}"
