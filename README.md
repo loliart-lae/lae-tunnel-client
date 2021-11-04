@@ -3,8 +3,6 @@ Light App Engine Tunnel Client
 
 支持平台：`Windows` `Linux` `macOS`
 
-请注意：目前还没有推出正式版本, 尽请期待
-
 ## 如何使用
 
 请注意：或许你需要自备 frpc 程序, 你可以在 `config.yml` 修改启动命令
