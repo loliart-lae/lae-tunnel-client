@@ -65,6 +65,7 @@ def sendrequest(url, original):
         if (r.status_code != 200):
             if (Debug):
                 print(language['debug'] + language['status_code_error'].format(code=str(r.status_code), url=url))
+            time.sleep(0.2)
             continue
 
         if (original == True):
@@ -108,15 +109,21 @@ def printTunnel(is_arg):
     if (result == "error"): return False
     
     if (not is_arg):
+
+        print()
+
         table_format = "%-5s\t%-10s\t%-5s\t%-10s\t%-15s\t%-12s\t%-5s\t%-10s"
     
         print(table_format%(language['tunnel_id'],language['tunnel_name'],language['tunnel_protocol'],language['tunnel_local_address'],language['tunnel_server'],language['tunnel_project'],language['tunnel_project_id'],language['tunnel_ping']))
 
-    for line in result:
-        if (not is_arg):
+        for line in result:
             server_name = server[line['server_id']]
             project_name = project[line['project_id']]
             print(table_format%(line['id'],line['name'],line['protocol'],line['local_address'],server_name,project_name,"p" + str(line['project_id']),line['ping']))
+        
+        print()
+
+    for line in result:            
         tunnel[line['id']] = line['project_id']
 
     return True
@@ -182,7 +189,7 @@ def getToken(is_arg):
 
     getUserInfo()
 
-    if (printTunnel(is_arg)):
+    if (printTunnel(args.tunnel != None)):
         return True
     else:
         if (is_arg):
