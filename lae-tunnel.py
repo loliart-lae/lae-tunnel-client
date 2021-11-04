@@ -108,15 +108,15 @@ def printTunnel(is_arg):
     if (result == "error"): return False
     
     if (not is_arg):
-        table_format = "%-5s\t%-10s\t%-5s\t%-10s\t%-15s\t%-12s\t%-10s"
+        table_format = "%-5s\t%-10s\t%-5s\t%-10s\t%-15s\t%-12s\t%-5s\t%-10s"
     
-        print(table_format%(language['tunnel_id'],language['tunnel_name'],language['tunnel_protocol'],language['tunnel_local_address'],language['tunnel_server'],language['tunnel_project'],language['tunnel_ping']))
+        print(table_format%(language['tunnel_id'],language['tunnel_name'],language['tunnel_protocol'],language['tunnel_local_address'],language['tunnel_server'],language['tunnel_project'],language['tunnel_project_id'],language['tunnel_ping']))
 
     for line in result:
         if (not is_arg):
             server_name = server[line['server_id']]
             project_name = project[line['project_id']]
-            print(table_format%(line['id'],line['name'],line['protocol'],line['local_address'],server_name,project_name,line['ping']))
+            print(table_format%(line['id'],line['name'],line['protocol'],line['local_address'],server_name,project_name,"#" + str(line['project_id']),line['ping']))
         tunnel[line['id']] = line['project_id']
 
     return True
@@ -150,12 +150,7 @@ def runTunnel(tunnels):
     success = 0
 
     for tunnel_id in tunnels:
-        try:
-            tunnel_ID = int(tunnel_id)
-        except ValueError:
-            print(language['warn'] + language['tunnel_input_value_warn'])
-            return False
-        if (tunnel_ID in tunnel):
+        if (tunnel_id in tunnel):
             # 下载配置文件
             if (get_config(tunnel_id)):
                 # 启动程序
@@ -171,7 +166,7 @@ def runTunnel(tunnels):
 
                 success += 1
             else:
-                print(language['warn'] + language['tunnel_get_config_warn'].format(tunnel_id))
+                print(language['warn'] + language['tunnel_get_config_warn'].format(id=tunnel_id))
     
     if (success == 0): return False
     else: return True
@@ -201,66 +196,55 @@ def getTunnelID(is_arg):
     global arg_tunnel
     if (not is_arg):
         arg_tunnel = input(language['info'] + language['tunnel_input'])
-        # 空输入
-        if (arg_tunnel == ""):
-            project_format = language['project_format']
 
-            project_str = language['info'] + language['project_str']
+        tunnel_list = []
 
-            for project_id in project.keys():
-                project_str += project_format.format(id=project_id, name=project[project_id])
-
-            print(project_str)
-
-            while (1):
-                if (arg_project == None):
-                    choose_project = input(language['info'] + language['tunnel_project_input'])
-                else:
-                    choose_project = arg_project
-
-                if (choose_project == ""):
-                    arg_tunnel = list(tunnel.keys())
-                    break
-                else:
-                    try:
-                        choose_project = choose_project.split(",")
-                        
-                        for i in range(len(choose_project)):
-                            choose_project[i] = int(choose_project[i])
-                    except ValueError:
-                        if (args.project == None):
-                            print(language['warn'] + language['tunnel_project_id_warn'])
-                            continue
-                        else:
-                            print(language['error'] + language['tunnel_project_id_fail'])
-                            break
-                        
-                    
-                    arg_tunnel = []
-                    for project_num in choose_project:
-                        # 判断是否在项目列表
-                        if project_num in project.keys():
-                            
-                            for tunnel_id in tunnel.keys():
-                                if tunnel[tunnel_id] == project_num:
-                                    arg_tunnel.append(tunnel_id)
-                        else:
-                            print(language['warn'] + language['tunnel_project_id_pass'].format(str=project_num))
-
-                    if (len(arg_tunnel) == 0):
-                        if (args.project == None):
-                            print(language['warn'] + language['tunnel_project_no_tunnel_warn'])
-                            continue
-                        else:
-                            print(language['error'] + language['tunnel_project_no_tunnel_fail'])
-                            break
-                    else:
-                        break
-                    
+        # 判断是否为空
+        if (arg_tunnel == ''):
+            tunnel_list = list(tunnel_list.keys())
         else:
+            # 拆分输入
             arg_tunnel = arg_tunnel.split(',')
 
-    if(runTunnel(arg_tunnel)):
+            for key in arg_tunnel:
+                # 如果为项目编号
+                if (key.startswith('#')):
+                    # 检查输入项目是否为数字
+                    try:
+                        key = key.lstrip('#')
+
+                        key = int(key)
+                    except ValueError:
+                        print(language['warn'] + language['tunnel_project_id_warn'])
+                        continue
+
+                    # 判断是否在项目列表
+                    if key in project.keys():
+                        # 循环添加其中的隧道
+                        for tunnel_id in tunnel.keys():
+                            # 指定项目中的隧道, 并且未添加的
+                            if tunnel[tunnel_id] == key and tunnel_id not in tunnel_list:
+                                tunnel_list.append(tunnel_id)
+                    # 不存在时通知提醒
+                    else:
+                        print(language['warn'] + language['tunnel_project_id_pass'].format('#' + str(id=key)))
+                # 为普通隧道 ID
+                else:
+                    # 判断输入是否为整数
+                    try:
+                        key = int(key)
+                    except ValueError:
+                        print(language['warn'] + language['tunnel_input_value_warn'])
+                        continue
+
+                    if key in tunnel:
+                        if key not in tunnel_list:
+                            tunnel_list.append(key)
+                    # 不存在隧道提醒
+                    else:
+                        print(language['warn'] + language['tunnel_input_not_found'].format(id=key))
+
+    if(runTunnel(tunnel_list)):
         return True
     else:
         if (is_arg):
@@ -291,12 +275,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=language['arg_description'])
     parser.add_argument('-a', '--token', help=language['arg_token'])
     parser.add_argument('-t', '--tunnel', help=language['arg_tunnel'])
-    parser.add_argument('-p', '--project', help=language['arg_project'])
     args = parser.parse_args()
 
     token = args.token
     arg_tunnel = args.tunnel
-    arg_project = args.project
     if (arg_tunnel != None):
         arg_tunnel = arg_tunnel.split(',')
 
