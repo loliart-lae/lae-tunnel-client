@@ -1,6 +1,5 @@
 # Lae Tunnel
 # By Bing_Yanchi
-# 主程序
 
 from threading import Thread
 import time, json, argparse, requests, os, yaml
