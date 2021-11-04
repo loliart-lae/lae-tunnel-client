@@ -130,6 +130,7 @@ def printTunnel(is_arg):
 
 # 下载配置文件
 def get_config(id):
+
     result = sendrequest(get_config_url + str(id) + "?api_token={}".format(token), True)
 
     if (result == "error"): return False
@@ -137,7 +138,7 @@ def get_config(id):
     if (os.path.exists('config')) == False:
         os.mkdir('config')
     
-    with open('config/lae-frp-{}.ini'.format(id), 'w', encoding='utf8') as f:
+    with open(frpc_config.format(id), 'w', encoding='utf8') as f:
         f.write(result)
     
     return True
