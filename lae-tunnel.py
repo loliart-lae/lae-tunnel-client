@@ -3,17 +3,17 @@
 # 主程序
 
 from threading import Thread
-#from win10toast import ToastNotifier
 import time, json, argparse, requests, os, yaml
-
-# Windows 通知
-#toaster = ToastNotifier()
 
 # 配置部分
 get_tunnels_url = "http://lightart.top/api/v1/_tunnels"
 get_project_url = "http://lightart.top/api/_projects"
 get_server_url = "http://lightart.top/api/v1/_tunnels/create"
 get_config_url = " http://lightart.top/api/v1/_tunnels/"
+
+# frpc 命令
+frpc_command = "api-frpclient.exe -c {file}"
+frpc_config = "config/lae-frp-{id}.ini"
 
 # 变量部分
 project = {}
@@ -34,13 +34,15 @@ def read_config():
     with open('config.yml', 'r', encoding="utf-8") as f:
         config = yaml.load(f, Loader= yaml.SafeLoader)
     # 读取
-    global Debug, language_code, get_tunnels_url, get_project_url, get_server_url, get_config_url
+    global Debug, language_code, get_tunnels_url, get_project_url, get_server_url, get_config_url, frpc_command, frpc_config
     Debug = config['debug']
     language_code = config['language']
     get_tunnels_url = config['api']['get_tunnels']
     get_project_url = config['api']['get_project']
     get_server_url = config['api']['get_server']
     get_config_url = config['api']['get_config']
+    frpc_command = config['frpc_command']
+    frpc_config = config['frpc_config']
 
 # 读取语言文件
 def read_language(Language):
@@ -58,11 +60,12 @@ def sendrequest(url, original):
             print(language['debug'] + language['ssl_error'])
         return False
 
-    for i in range(0,3):
+    for i in range(0,5):
 
         if (r.status_code != 200):
             if (Debug):
                 print(language['debug'] + language['status_code_error'].format(code=str(r.status_code), url=url))
+            time.sleep(0.2)
             continue
 
         if (original == True):
@@ -106,15 +109,21 @@ def printTunnel(is_arg):
     if (result == "error"): return False
     
     if (not is_arg):
-        table_format = "%-5s\t%-10s\t%-5s\t%-10s\t%-15s\t%-12s\t%-10s"
-    
-        print(table_format%(language['tunnel_id'],language['tunnel_name'],language['tunnel_protocol'],language['tunnel_local_address'],language['tunnel_server'],language['tunnel_project'],language['tunnel_ping']))
 
-    for line in result:
-        if (not is_arg):
+        print()
+
+        table_format = "%-5s\t%-10s\t%-5s\t%-10s\t%-15s\t%-12s\t%-5s\t%-10s"
+    
+        print(table_format%(language['tunnel_id'],language['tunnel_name'],language['tunnel_protocol'],language['tunnel_local_address'],language['tunnel_server'],language['tunnel_project'],language['tunnel_project_id'],language['tunnel_ping']))
+
+        for line in result:
             server_name = server[line['server_id']]
             project_name = project[line['project_id']]
-            print(table_format%(line['id'],line['name'],line['protocol'],line['local_address'],server_name,project_name,line['ping']))
+            print(table_format%(line['id'],line['name'],line['protocol'],line['local_address'],server_name,project_name,"p" + str(line['project_id']),line['ping']))
+        
+        print()
+
+    for line in result:            
         tunnel[line['id']] = line['project_id']
 
     return True
@@ -148,28 +157,23 @@ def runTunnel(tunnels):
     success = 0
 
     for tunnel_id in tunnels:
-        try:
-            tunnel_ID = int(tunnel_id)
-        except ValueError:
-            print(language['warn'] + language['tunnel_input_value_warn'])
-            return False
-        if (tunnel_ID in tunnel):
+        if (tunnel_id in tunnel):
             # 下载配置文件
             if (get_config(tunnel_id)):
                 # 启动程序
-                command = 'api-frpclient.exe -c config/lae-frp-{}.ini'.format(tunnel_id)
+                command = frpc_command.format(file=frpc_config.format(id=tunnel_id))
 
                 th_frpGo = Thread(target=runCmd, args=(command,))
                 th_frpGo.setDaemon(True)
                 th_frpGo.start()
 
-                th_fileRemove = Thread(target=removeFile, args=('config/lae-frp-{}.ini'.format(tunnel_id),))
+                th_fileRemove = Thread(target=removeFile, args=(frpc_config.format(id=tunnel_id),))
                 th_fileRemove.setDaemon(True)
                 th_fileRemove.start()
 
                 success += 1
             else:
-                print(language['warn'] + language['tunnel_get_config_warn'].format(tunnel_id))
+                print(language['warn'] + language['tunnel_get_config_warn'].format(id=tunnel_id))
     
     if (success == 0): return False
     else: return True
@@ -185,7 +189,7 @@ def getToken(is_arg):
 
     getUserInfo()
 
-    if (printTunnel(is_arg)):
+    if (printTunnel(args.tunnel != None)):
         return True
     else:
         if (is_arg):
@@ -199,66 +203,55 @@ def getTunnelID(is_arg):
     global arg_tunnel
     if (not is_arg):
         arg_tunnel = input(language['info'] + language['tunnel_input'])
-        # 空输入
-        if (arg_tunnel == ""):
-            project_format = language['project_format']
 
-            project_str = language['info'] + language['project_str']
+    tunnel_list = []
 
-            for project_id in project.keys():
-                project_str += project_format.format(id=project_id, name=project[project_id])
+    # 判断是否为空
+    if (arg_tunnel == ''):
+        tunnel_list = list(tunnel_list.keys())
+    else:
+        # 拆分输入
+        arg_tunnel = arg_tunnel.split(',')
 
-            print(project_str)
+        for key in arg_tunnel:
+            # 如果为项目编号
+            if (key.startswith('p')):
+                # 检查输入项目是否为数字
+                try:
+                    key = key.lstrip('p')
 
-            while (1):
-                if (arg_project == None):
-                    choose_project = input(language['info'] + language['tunnel_project_input'])
+                    key = int(key)
+                except ValueError:
+                    print(language['warn'] + language['tunnel_project_id_warn'])
+                    continue
+
+                # 判断是否在项目列表
+                if key in project.keys():
+                    # 循环添加其中的隧道
+                    for tunnel_id in tunnel.keys():
+                        # 指定项目中的隧道, 并且未添加的
+                        if tunnel[tunnel_id] == key and tunnel_id not in tunnel_list:
+                            tunnel_list.append(tunnel_id)
+                # 不存在时通知提醒
                 else:
-                    choose_project = arg_project
+                    print(language['warn'] + language['tunnel_project_id_pass'].format('p' + str(id=key)))
+            # 为普通隧道 ID
+            else:
+                # 判断输入是否为整数
+                try:
+                    key = int(key)
+                except ValueError:
+                    print(language['warn'] + language['tunnel_input_value_warn'])
+                    continue
 
-                if (choose_project == ""):
-                    arg_tunnel = list(tunnel.keys())
-                    break
+                if key in tunnel:
+                    if key not in tunnel_list:
+                        tunnel_list.append(key)
+                # 不存在隧道提醒
                 else:
-                    try:
-                        choose_project = choose_project.split(",")
-                        
-                        for i in range(len(choose_project)):
-                            choose_project[i] = int(choose_project[i])
-                    except ValueError:
-                        if (args.project == None):
-                            print(language['warn'] + language['tunnel_project_id_warn'])
-                            continue
-                        else:
-                            print(language['error'] + language['tunnel_project_id_fail'])
-                            break
-                        
-                    
-                    arg_tunnel = []
-                    for project_num in choose_project:
-                        # 判断是否在项目列表
-                        if project_num in project.keys():
-                            
-                            for tunnel_id in tunnel.keys():
-                                if tunnel[tunnel_id] == project_num:
-                                    arg_tunnel.append(tunnel_id)
-                        else:
-                            print(language['warn'] + language['tunnel_project_id_pass'].format(str=project_num))
+                    print(language['warn'] + language['tunnel_input_not_found'].format(id=key))
 
-                    if (len(arg_tunnel) == 0):
-                        if (args.project == None):
-                            print(language['warn'] + language['tunnel_project_no_tunnel_warn'])
-                            continue
-                        else:
-                            print(language['error'] + language['tunnel_project_no_tunnel_fail'])
-                            break
-                    else:
-                        break
-                    
-        else:
-            arg_tunnel = arg_tunnel.split(',')
-
-    if(runTunnel(arg_tunnel)):
+    if(runTunnel(tunnel_list)):
         return True
     else:
         if (is_arg):
@@ -289,14 +282,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=language['arg_description'])
     parser.add_argument('-a', '--token', help=language['arg_token'])
     parser.add_argument('-t', '--tunnel', help=language['arg_tunnel'])
-    parser.add_argument('-p', '--project', help=language['arg_project'])
     args = parser.parse_args()
 
     token = args.token
     arg_tunnel = args.tunnel
-    arg_project = args.project
-    if (arg_tunnel != None):
-        arg_tunnel = arg_tunnel.split(',')
 
     # 最默认的模式
     if (args.token == None and args.tunnel == None):

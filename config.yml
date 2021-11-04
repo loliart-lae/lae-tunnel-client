@@ -10,6 +10,11 @@ version: 1
 # zh_cn 简体中文
 language: zh_cn
 
+# 执行 frpc 命令
+# Windows: api-frpclient.exe
+frpc_command: "api-frpclient.exe -c {file}"
+frpc_config: "config/lae-frp-{id}.ini"
+
 # API
 # 目前仅支持 http 协议, 使用 https 会导致 ssl 验证错误
 api:
