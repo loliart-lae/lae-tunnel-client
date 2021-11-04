@@ -11,8 +11,7 @@ version: 1
 language: zh_cn
 
 # 执行 frpc 命令
-# Windows: api-frpclient.exe
-frpc_command: "api-frpclient.exe -c {file}"
+frpc_command: "frpclient.exe -c {file}"
 frpc_config: "config/lae-frp-{id}.ini"
 
 # API
