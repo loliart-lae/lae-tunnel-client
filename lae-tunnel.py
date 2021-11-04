@@ -146,11 +146,6 @@ def get_config(id):
 def runCmd(command):
     os.system(command)
 
-# 删除配置文件
-def removeFile(file):
-    time.sleep(5)
-    os.remove(file)
-
 # 启动隧道
 def runTunnel(tunnels):
 
@@ -166,10 +161,6 @@ def runTunnel(tunnels):
                 th_frpGo = Thread(target=runCmd, args=(command,))
                 th_frpGo.setDaemon(True)
                 th_frpGo.start()
-
-                th_fileRemove = Thread(target=removeFile, args=(frpc_config.format(id=tunnel_id),))
-                th_fileRemove.setDaemon(True)
-                th_fileRemove.start()
 
                 success += 1
             else:
