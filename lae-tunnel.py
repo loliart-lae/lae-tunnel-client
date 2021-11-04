@@ -1,6 +1,5 @@
 # Lae Tunnel
 # By Bing_Yanchi
-# 主程序
 
 from threading import Thread
 import time, json, argparse, requests, os, yaml
@@ -130,6 +129,9 @@ def printTunnel(is_arg):
 
 # 下载配置文件
 def get_config(id):
+
+    if (args.latest and os.path.exists(frpc_config.format(id=id))): return True
+
     result = sendrequest(get_config_url + str(id) + "?api_token={}".format(token), True)
 
     if (result == "error"): return False
@@ -137,7 +139,7 @@ def get_config(id):
     if (os.path.exists('config')) == False:
         os.mkdir('config')
     
-    with open('config/lae-frp-{}.ini'.format(id), 'w', encoding='utf8') as f:
+    with open(frpc_config.format(id=id), 'w', encoding='utf-8') as f:
         f.write(result)
     
     return True
@@ -145,11 +147,6 @@ def get_config(id):
 # 执行启动隧道
 def runCmd(command):
     os.system(command)
-
-# 删除配置文件
-def removeFile(file):
-    time.sleep(5)
-    os.remove(file)
 
 # 启动隧道
 def runTunnel(tunnels):
@@ -166,10 +163,6 @@ def runTunnel(tunnels):
                 th_frpGo = Thread(target=runCmd, args=(command,))
                 th_frpGo.setDaemon(True)
                 th_frpGo.start()
-
-                th_fileRemove = Thread(target=removeFile, args=(frpc_config.format(id=tunnel_id),))
-                th_fileRemove.setDaemon(True)
-                th_fileRemove.start()
 
                 success += 1
             else:
@@ -280,9 +273,13 @@ if __name__ == "__main__":
 
     # 检查参数
     parser = argparse.ArgumentParser(description=language['arg_description'])
-    parser.add_argument('-a', '--token', help=language['arg_token'])
+    parser.add_argument('--token', help=language['arg_token'])
     parser.add_argument('-t', '--tunnel', help=language['arg_tunnel'])
+    parser.add_argument('--lang', help=language['arg_lang'])
+    parser.add_argument('--latest', help=language['arg_latest'], action='store_true')
     args = parser.parse_args()
+
+    read_language("language/{}.yml".format(language_code))
 
     token = args.token
     arg_tunnel = args.tunnel
