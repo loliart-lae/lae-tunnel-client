@@ -130,8 +130,6 @@ def printTunnel(is_arg):
 # 下载配置文件
 def get_config(id):
 
-    if (args.latest and os.path.exists(frpc_config.format(id=id))): return True
-
     result = sendrequest(get_config_url + str(id) + "?api_token={}".format(token), True)
 
     if (result == "error"): return False
@@ -155,18 +153,24 @@ def runTunnel(tunnels):
 
     for tunnel_id in tunnels:
         if (tunnel_id in tunnel):
-            # 下载配置文件
-            if (get_config(tunnel_id)):
-                # 启动程序
-                command = frpc_command.format(file=frpc_config.format(id=tunnel_id))
-
-                th_frpGo = Thread(target=runCmd, args=(command,))
-                th_frpGo.setDaemon(True)
-                th_frpGo.start()
-
+            if (args.latest and os.path.exists(frpc_config.format(id=id))):
                 success += 1
             else:
-                print(language['warn'] + language['tunnel_get_config_warn'].format(id=tunnel_id))
+                # 下载配置文件
+                if (get_config(tunnel_id)):
+                    success += 1
+                    # 间隔
+                    time.sleep(0.3)
+                else:
+                    print(language['warn'] + language['tunnel_get_config_warn'].format(id=tunnel_id))
+                    continue
+                
+            # 启动程序
+            command = frpc_command.format(file=frpc_config.format(id=tunnel_id))
+
+            th_frpGo = Thread(target=runCmd, args=(command,))
+            th_frpGo.setDaemon(True)
+            th_frpGo.start()
     
     if (success == 0): return False
     else: return True
