@@ -121,7 +121,18 @@ def getUserInfo():
     for line in result:
         server[line['id']] = line['name']
 
-# 4. 获取隧道列表
+# 4. 判断隧道是否存在
+def check_tunnel_online(start_time):
+    # 最后在线时间
+    if (start_time != None):
+        check_time = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
+        now_time = datetime.now()
+
+        if (now_time - check_time <= timedelta(seconds=70)): return True
+    # 不满足返回 False
+    return False
+
+# 5. 获取隧道列表
 def printTunnel(is_arg):
     result = sendrequest(get_tunnels_url + "?api_token={}".format(token), False)
 
@@ -140,12 +151,8 @@ def printTunnel(is_arg):
             server_name = server[line['server_id']]
             project_name = project[line['project_id']]
             # 最后在线时间
-            if (line['ping'] != None):
-                ping_time = datetime.strptime(line['ping'], '%Y-%m-%d %H:%M:%S')
-                now_time = datetime.now()
-
-                if (now_time - ping_time <= timedelta(seconds=70)):
-                    line['ping'] = "\033[1;33;1m{time}\033[0m".format(time=line['ping'])
+            if (check_tunnel_online(line['ping'])):
+                line['ping'] = "\033[1;33;1m{time}\033[0m".format(time=line['ping'])
 
             print(table_format%(line['id'],line['name'],line['protocol'],line['local_address'],server_name,project_name,"p" + str(line['project_id']),line['ping']))
         
@@ -156,7 +163,7 @@ def printTunnel(is_arg):
 
     return True
 
-# 5. 向用户获取 隧道 ID
+# 6. 向用户获取 隧道 ID
 def getTunnelID(is_arg):
     global arg_tunnel
     if (not is_arg):
@@ -217,7 +224,7 @@ def getTunnelID(is_arg):
         else:
             print(language['warn'] + language['tunnel_not_found_warn'])
 
-# 6. 下载配置文件
+# 7. 下载配置文件
 def get_config(id):
 
     result = sendrequest(get_config_url + str(id) + "?api_token={}".format(token), True)
@@ -232,11 +239,11 @@ def get_config(id):
     
     return True
 
-# 7. 执行启动隧道
+# 8. 执行启动隧道
 def runCmd(command):
     os.system(command)
 
-# 8. 启动隧道
+# 9. 启动隧道
 def runTunnel(tunnels):
 
     success = 0
