@@ -2,6 +2,7 @@
 # By Bing_Yanchi
 
 from threading import Thread
+from datetime import datetime, timedelta
 import time, json, argparse, requests, os, yaml
 
 # 配置部分
@@ -118,6 +119,14 @@ def printTunnel(is_arg):
         for line in result:
             server_name = server[line['server_id']]
             project_name = project[line['project_id']]
+            # 最后在线时间
+            if (line['ping'] != None):
+                ping_time = datetime.strptime(line['ping'], '%Y-%m-%d %H:%M:%S')
+                now_time = datetime.now()
+
+                if (now_time - ping_time <= timedelta(seconds=70)):
+                    line['ping'] = "\033[1;33;1m{time}\033[0m".format(time=line['ping'])
+
             print(table_format%(line['id'],line['name'],line['protocol'],line['local_address'],server_name,project_name,"p" + str(line['project_id']),line['ping']))
         
         print()
