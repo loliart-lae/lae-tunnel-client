@@ -2,6 +2,7 @@
 # By Bing_Yanchi
 
 from threading import Thread
+from datetime import datetime, timedelta
 import time, json, argparse, requests, os, yaml
 
 # 配置部分
@@ -18,6 +19,7 @@ frpc_config = "config/lae-frp-{id}.ini"
 project = {}
 server = {}
 tunnel = {}
+tunnel_online = []
 config = {}
 
 # 调试模式
@@ -27,7 +29,7 @@ Debug = False
 language = {}
 language_code = "zh_cn"
 
-# 获取配置文件
+# 0. 获取配置文件
 def read_config():
     config = {}
     with open('config.yml', 'r', encoding="utf-8") as f:
@@ -43,13 +45,33 @@ def read_config():
     frpc_command = config['frpc_command']
     frpc_config = config['frpc_config']
 
-# 读取语言文件
+# 0. 读取语言文件
 def read_language(Language):
     global language, language_code
     with open(Language, 'r', encoding="utf-8") as f:
         language = yaml.load(f, Loader = yaml.SafeLoader)
 
-# 公用发送请求函数
+# 1. 向用户获取 Token
+def getToken(is_arg):
+    global token
+    if (not is_arg):
+        token = input(language['info'] + language['token_input'])
+        if (token == ""):
+            print(language['warn'] + language['token_null'])
+            return False
+
+    getUserInfo()
+
+    if (printTunnel(args.tunnel != None)):
+        return True
+    else:
+        if (is_arg):
+            print(language['error'] + language['token_fail'])
+        else:
+            print(language['warn'] + language['token_warn'])
+        return False
+
+# 2. 公用发送请求函数
 def sendrequest(url, original):
 
     try:
@@ -82,7 +104,7 @@ def sendrequest(url, original):
         print(language['debug'] + language['fail_request'])
     return "error"
 
-# 获取项目与节点名称
+# 3. 获取项目与节点名称
 def getUserInfo():
     
     result = sendrequest(get_project_url + "?api_token={}".format(token), False)
@@ -100,7 +122,18 @@ def getUserInfo():
     for line in result:
         server[line['id']] = line['name']
 
-# 获取隧道列表
+# 4. 判断隧道是否存在
+def check_tunnel_online(start_time):
+    # 最后在线时间
+    if (start_time != None):
+        check_time = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
+        now_time = datetime.now()
+
+        if (now_time - check_time <= timedelta(seconds=70)): return True
+    # 不满足返回 False
+    return False
+
+# 5. 获取隧道列表
 def printTunnel(is_arg):
     result = sendrequest(get_tunnels_url + "?api_token={}".format(token), False)
 
@@ -118,6 +151,11 @@ def printTunnel(is_arg):
         for line in result:
             server_name = server[line['server_id']]
             project_name = project[line['project_id']]
+            # 最后在线时间
+            if (check_tunnel_online(line['ping'])):
+                tunnel_online.append(line['id'])
+                line['ping'] = "\033[1;33;1m{time}\033[0m".format(time=line['ping'])
+
             print(table_format%(line['id'],line['name'],line['protocol'],line['local_address'],server_name,project_name,"p" + str(line['project_id']),line['ping']))
         
         print()
@@ -127,75 +165,7 @@ def printTunnel(is_arg):
 
     return True
 
-# 下载配置文件
-def get_config(id):
-
-    result = sendrequest(get_config_url + str(id) + "?api_token={}".format(token), True)
-
-    if (result == "error"): return False
-
-    if (os.path.exists('config')) == False:
-        os.mkdir('config')
-    
-    with open(frpc_config.format(id=id), 'w', encoding='utf-8') as f:
-        f.write(result)
-    
-    return True
-
-# 执行启动隧道
-def runCmd(command):
-    os.system(command)
-
-# 启动隧道
-def runTunnel(tunnels):
-
-    success = 0
-
-    for tunnel_id in tunnels:
-        if (tunnel_id in tunnel):
-            if (args.latest and os.path.exists(frpc_config.format(id=id))):
-                success += 1
-            else:
-                # 下载配置文件
-                if (get_config(tunnel_id)):
-                    success += 1
-                    # 间隔
-                    time.sleep(0.3)
-                else:
-                    print(language['warn'] + language['tunnel_get_config_warn'].format(id=tunnel_id))
-                    continue
-                
-            # 启动程序
-            command = frpc_command.format(file=frpc_config.format(id=tunnel_id))
-
-            th_frpGo = Thread(target=runCmd, args=(command,))
-            th_frpGo.setDaemon(True)
-            th_frpGo.start()
-    
-    if (success == 0): return False
-    else: return True
-
-# 向用户获取 Token
-def getToken(is_arg):
-    global token
-    if (not is_arg):
-        token = input(language['info'] + language['token_input'])
-        if (token == ""):
-            print(language['warn'] + language['token_null'])
-            return False
-
-    getUserInfo()
-
-    if (printTunnel(args.tunnel != None)):
-        return True
-    else:
-        if (is_arg):
-            print(language['error'] + language['token_fail'])
-        else:
-            print(language['warn'] + language['token_warn'])
-        return False
-
-# 向用户获取 隧道 ID
+# 6. 向用户获取 隧道 ID
 def getTunnelID(is_arg):
     global arg_tunnel
     if (not is_arg):
@@ -228,6 +198,9 @@ def getTunnelID(is_arg):
                     for tunnel_id in tunnel.keys():
                         # 指定项目中的隧道, 并且未添加的
                         if tunnel[tunnel_id] == key and tunnel_id not in tunnel_list:
+                            if (tunnel_id in tunnel_online):
+                                print(language['warn'] + language['tunnel_online_pass'].format(id=tunnel_id))
+                                continue
                             tunnel_list.append(tunnel_id)
                 # 不存在时通知提醒
                 else:
@@ -256,7 +229,56 @@ def getTunnelID(is_arg):
         else:
             print(language['warn'] + language['tunnel_not_found_warn'])
 
-# Debug 模式
+# 7. 下载配置文件
+def get_config(id):
+
+    result = sendrequest(get_config_url + str(id) + "?api_token={}".format(token), True)
+
+    if (result == "error"): return False
+
+    if (os.path.exists('config')) == False:
+        os.mkdir('config')
+    
+    with open(frpc_config.format(id=id), 'w', encoding='utf-8') as f:
+        f.write(result)
+    
+    return True
+
+# 8. 执行启动隧道
+def runCmd(command):
+    os.system(command)
+
+# 9. 启动隧道
+def runTunnel(tunnels):
+
+    success = 0
+
+    for tunnel_id in tunnels:
+        if (tunnel_id in tunnel):
+            if (args.latest and os.path.exists(frpc_config.format(id=id))):
+                success += 1
+            else:
+                # 下载配置文件
+                if (get_config(tunnel_id)):
+                    success += 1
+                    # 间隔
+                    time.sleep(0.3)
+                else:
+                    print(language['warn'] + language['tunnel_get_config_warn'].format(id=tunnel_id))
+                    continue
+                
+            # 启动程序
+            command = frpc_command.format(file=frpc_config.format(id=tunnel_id))
+
+            th_frpGo = Thread(target=runCmd, args=(command,))
+            th_frpGo.setDaemon(True)
+            th_frpGo.start()
+            time.sleep(0.3)
+    
+    if (success == 0): return False
+    else: return True
+
+# -1. Debug 模式
 if (not Debug):
     print("========================================================================================================")
     print("")
