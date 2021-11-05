@@ -266,8 +266,7 @@ def runTunnel(tunnels):
     if (success == 0): return False
     else: return True
 
-
-# Debug 模式
+# -1. Debug 模式
 if (not Debug):
     print("========================================================================================================")
     print("")
