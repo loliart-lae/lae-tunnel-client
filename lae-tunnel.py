@@ -19,6 +19,7 @@ frpc_config = "config/lae-frp-{id}.ini"
 project = {}
 server = {}
 tunnel = {}
+tunnel_online = []
 config = {}
 
 # 调试模式
@@ -152,6 +153,7 @@ def printTunnel(is_arg):
             project_name = project[line['project_id']]
             # 最后在线时间
             if (check_tunnel_online(line['ping'])):
+                tunnel_online.append(line['ping'])
                 line['ping'] = "\033[1;33;1m{time}\033[0m".format(time=line['ping'])
 
             print(table_format%(line['id'],line['name'],line['protocol'],line['local_address'],server_name,project_name,"p" + str(line['project_id']),line['ping']))
@@ -196,6 +198,9 @@ def getTunnelID(is_arg):
                     for tunnel_id in tunnel.keys():
                         # 指定项目中的隧道, 并且未添加的
                         if tunnel[tunnel_id] == key and tunnel_id not in tunnel_list:
+                            if (tunnel_id in tunnel_online):
+                                print(language['warn'] + language['tunnel_online_pass'])
+                                continue
                             tunnel_list.append(tunnel_id)
                 # 不存在时通知提醒
                 else:
