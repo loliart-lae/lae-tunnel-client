@@ -180,6 +180,7 @@ def runTunnel(tunnels):
             th_frpGo = Thread(target=runCmd, args=(command,))
             th_frpGo.setDaemon(True)
             th_frpGo.start()
+            time.sleep(0.3)
     
     if (success == 0): return False
     else: return True
