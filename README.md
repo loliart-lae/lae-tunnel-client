@@ -3,7 +3,11 @@ Light App Engine Tunnel Client
 
 支持平台：`Windows` `Linux` `macOS`
 
-## 如何使用
+## 创建隧道
+
+此操作目前不支持在程序内执行，请前往 Lae 的 `穿透隧道` 中创建隧道。
+
+## 如何启动
 
 请注意：或许你需要自备 frpc 程序, 你可以在 `config.yml` 修改启动命令
 
